@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Successful</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+
+  <div class="card shadow p-4 text-center" style="max-width: 500px; border-radius: 15px;">
+    <!-- Success Icon -->
+    <div class="mb-3">
+      <svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" fill="green" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.97 11.03a.75.75 0 0 0 1.07 0l4.992-4.992a.75.75 0 1 0-1.06-1.06L7.5 9.439 5.383 7.322a.75.75 0 0 0-1.06 1.06L6.97 11.03z"/>
+      </svg>
+    </div>
+
+    <!-- Message -->
+    <h2 class="text-success">Order Successful!</h2>
+    <p class="text-muted">Thank you for your purchase. Your order has been placed successfully.</p>
+
+    <!-- Order Summary -->
+    <div class="card p-3 mb-3">
+      <h5>Order Summary</h5>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Item 1</span>
+          <span>$20</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Item 2</span>
+          <span>$15</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between fw-bold">
+          <span>Total</span>
+          <span>$35</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Buttons -->
+    <a href="index.html" class="btn btn-primary w-100 mb-2">Back to Home</a>
+    <a href="shop.html" class="btn btn-outline-success w-100">Continue Shopping</a>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

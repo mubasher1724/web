@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #FF6F61;
+      --accent-dark: #e85d53;
+      --radius: 14px;
+      --shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(76,175,80,0.10), transparent 55%),
+        radial-gradient(900px 500px at 90% 20%, rgba(16,185,129,0.10), transparent 55%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+    /* Announcement bar */
+    .announce { background: #0f172a; color: #cbd5e1; font-size: 13px; }
+    .announce .inner { max-width: 1200px; margin: 0 auto; padding: 8px 16px; text-align: center; }
+
+    /* Nav */
+    .nav { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 14px 0; backdrop-filter: saturate(140%) blur(6px); background: rgba(255,255,255,0.9); border-bottom: 1px solid var(--border); box-shadow: 0 8px 18px rgba(15,23,42,0.04); }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: -.02em; }
+    .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+    .nav a { color: var(--text); text-decoration: none; font-weight: 700; }
+    .menu { display: flex; gap: 16px; }
+    .menu a { position: relative; padding: 6px 2px; }
+    .menu a::after { content: ""; position: absolute; left: 0; bottom: -2px; width: 0; height: 2px; background: var(--accent); transition: width .2s ease; }
+    .menu a:hover { color: var(--accent); }
+    .menu a:hover::after { width: 100%; }
+    .nav .links { display: flex; gap: 16px; align-items: center; }
+    .cart { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; box-shadow: 0 6px 14px rgba(17,24,39,0.04); }
+    .cart .count { background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 6px; font-size: 12px; font-weight: 900; }
+
+    /* Hero */
+    .hero-banner { position: relative; border-radius: var(--radius); overflow: hidden; height: 380px; box-shadow: var(--shadow); border: 1px solid var(--border); background: #ddd; }
+    .hero-banner::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(0,0,0,.45), rgba(0,0,0,.2)), url('https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat; }
+    .hero-content { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #fff; padding: 20px; }
+    .hero-content h1 { font-size: 44px; margin: 0 0 8px; letter-spacing: -.02em; }
+    .hero-content p { margin: 0 0 18px; color: #e5e7eb; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; background: var(--accent); color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; letter-spacing: .2px; box-shadow: 0 10px 20px rgba(255,111,97,0.25); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; text-decoration: none; }
+    .btn:hover { filter: brightness(1.03); transform: translateY(-1px); box-shadow: 0 14px 26px rgba(255,111,97,0.33); }
+    .btn:focus-visible { outline: 3px solid rgba(255,111,97,.4); outline-offset: 2px; }
+
+    /* Products */
+    .section-title { margin: 22px 0 8px; font-size: 22px; font-weight: 900; }
+    .filters { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
+    .chip { padding: 8px 10px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-weight: 700; font-size: 12px; box-shadow: 0 6px 14px rgba(17,24,39,0.04); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px; }
+    .card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); overflow: hidden; display: flex; flex-direction: column; transition: transform .2s ease, box-shadow .2s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 20px 32px rgba(15,23,42,0.12); }
+    .thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: center; transition: transform .3s ease; display: block; }
+    /* Progressive image placeholder (skeleton) */
+    .thumb.skeleton { 
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .card:hover .thumb { transform: scale(1.04); }
+    .card-media { position: relative; overflow: hidden; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
+    .card-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.28) 75%, rgba(0,0,0,0.5) 100%); opacity: .25; transition: opacity .3s ease; }
+    .card:hover .card-media::after { opacity: .55; }
+    .pad { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px; color: #fff; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: linear-gradient(to top, rgba(2,6,23,0.6), rgba(2,6,23,0.25), rgba(2,6,23,0)); backdrop-filter: saturate(120%) blur(2px); margin: 0; }
+    .pad .muted, .pad .stars, .pad .pill { display: none; }
+    .pad .row { margin-top: 0; }
+    .pad .title { color: #fff; margin: 0; font-size: 16px; letter-spacing: -.2px; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+    .pad .price { color: #fff; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+    .title { font-weight: 800; margin: 0 0 6px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .price { font-weight: 900; }
+    .pill { padding: 6px 8px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; }
+    .pad .btn { padding: 10px 14px; border-radius: 999px; box-shadow: 0 10px 18px rgba(255,111,97,0.35); transform: translateY(4px); transition: transform .3s ease, box-shadow .3s ease; }
+    .card:hover .pad .btn { transform: translateY(0); box-shadow: 0 14px 26px rgba(255,111,97,0.45); }
+    .badge { position: absolute; top: 10px; left: 10px; background: var(--accent); color: #fff; padding: 6px 8px; border-radius: 999px; font-size: 12px; font-weight: 900; box-shadow: 0 8px 16px rgba(255,111,97,0.28); }
+    .card-media { position: relative; }
+    .stars { color: #f59e0b; font-size: 12px; }
+
+    /* Categories */
+    .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; }
+    .cat { position: relative; height: 160px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .cat img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.8); transition: transform .3s ease; }
+    .cat:hover img { transform: scale(1.05); }
+    .cat .label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,.55); color: #fff; padding: 8px 10px; border-radius: 999px; font-weight: 800; letter-spacing: .3px; }
+
+    /* Checkout CTA */
+    .checkout-cta { margin: 28px 0; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; border-radius: var(--radius); padding: 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 16px 28px rgba(255,111,97,0.25); }
+    .checkout-cta h3 { margin: 0; font-size: 20px; }
+
+    /* Footer */
+    .footer { background: #0f172a; color: #cbd5e1; margin-top: 32px; }
+    .footer .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; }
+    .footer h4 { margin: 0 0 10px; color: #fff; }
+    .footer a { color: #cbd5e1; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Footer */
+    footer { color: var(--muted); text-align: center; padding: 24px 0 40px; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-banner { height: 300px; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <style>
+    body { font-family: Poppins, Arial, sans-serif; }
+    
+    /* CRUD Section Styles */
+    .crud-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin: 32px 0;
+      overflow: hidden;
+    }
+    
+    .crud-header {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .crud-header h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+    }
+    
+    .crud-content {
+      padding: 24px;
+    }
+    
+    .form-section {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    
+    .form-section h3 {
+      margin: 0 0 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    
+    .table-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    
+    .table-section h3 {
+      margin: 0 0 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    
+    .btn-crud {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-crud:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+    
+    .btn-edit {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    
+    .form-control, .form-select {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.2rem rgba(255, 111, 97, 0.25);
+    }
+    
+    .table {
+      margin: 0;
+    }
+    
+    .table th {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .alert {
+      border-radius: 8px;
+      border: none;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="announce"><div class="inner">Free shipping on orders over $50</div></div>
+  <div class="container">
+    <nav class="nav">
+      <div class="brand"><span class="dot"></span> MyStore</div>
+      <div class="menu">
+        <a href="#">Home</a>
+        <a href="#products">Shop</a>
+        <a href="#categories">Categories</a>
+        <a href="#about">About</a>
+        <a href="testimonials.html">Testimonials</a>
+        <a href="#crud">Posts</a>
+        <a href="#footer">Contact</a>
+        <a href="checkout.html">Checkout</a>
+      </div>
+      <div class="links"><span class="cart">🛒 <span class="count">2</span></span></div>
+    </nav>
+
+    <section class="hero-banner">
+      <div class="hero-content">
+        <div>
+          <h1>Discover Our New Collection</h1>
+          <p>Handpicked styles and essentials for the season.</p>
+          <a class="btn" href="#products">Shop Now</a>
+        </div>
+      </div>
+    </section>
+
+    <h2 id="products" class="section-title">Featured products</h2>
+    <div class="filters">
+      <span class="chip">All</span>
+      <span class="chip">Audio</span>
+      <span class="chip">Bags</span>
+      <span class="chip">Watches</span>
+      <span class="chip">Shoes</span>
+      <span class="chip">Accessories</span>
+    </div>
+    <section class="grid">
+      <article class="card">
+        <div class="card-media">
+          <span class="badge">Best Seller</span>
+          <a href="checkout.html?product=wireless-headphones"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Wireless headphones in matte black finish" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=wireless-headphones">Wireless Headphones</a>
+          <div class="muted">Crystal-clear sound</div>
+          <div class="row"><span class="price">$79</span><span class="stars">★★★★★</span></div>
+          <div class="row"><span class="pill">Free shipping</span><a class="btn" href="checkout.html?product=wireless-headphones">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <a href="checkout.html?product=urban-backpack"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Urban backpack in brown canvas" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=urban-backpack">Urban Backpack</a>
+          <div class="muted">Daily carry</div>
+          <div class="row"><span class="price">$59</span><span class="stars">★★★★☆</span></div>
+          <div class="row"><span class="pill">2 colors</span><a class="btn" href="checkout.html?product=urban-backpack">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <span class="badge">New</span>
+          <a href="checkout.html?product=minimal-watch"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1518081461904-9ac3d7b6eb3b?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Minimal steel watch 42mm" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=minimal-watch">Minimal Watch</a>
+          <div class="muted">Steel, 42mm</div>
+          <div class="row"><span class="price">$99</span><span class="stars">★★★★★</span></div>
+          <div class="row"><span class="pill">2-year warranty</span><a class="btn" href="checkout.html?product=minimal-watch">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <a href="checkout.html?product=sport-sneakers"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Red sport sneakers" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=sport-sneakers">Sport Sneakers</a>
+          <div class="muted">Breathable mesh</div>
+          <div class="row"><span class="price">$69</span><span class="stars">★★★★☆</span></div>
+          <div class="row"><span class="pill">Popular</span><a class="btn" href="checkout.html?product=sport-sneakers">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <a href="checkout.html?product=polarized-sunglasses"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1518544801976-3e318e8d6d38?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Polarized sunglasses UV400" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=polarized-sunglasses">Polarized Sunglasses</a>
+          <div class="muted">UV400 protection</div>
+          <div class="row"><span class="price">$39</span><span class="stars">★★★★☆</span></div>
+          <div class="row"><span class="pill">Summer sale</span><a class="btn" href="checkout.html?product=polarized-sunglasses">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <span class="badge">-20%</span>
+          <a href="checkout.html?product=compact-camera"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1519183071298-a2962be96f83?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Compact 4K camera" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=compact-camera">Compact Camera</a>
+          <div class="muted">4K video</div>
+          <div class="row"><span class="price">$249</span><span class="stars">★★★★☆</span></div>
+          <div class="row"><span class="pill">Limited stock</span><a class="btn" href="checkout.html?product=compact-camera">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <a href="checkout.html?product=all-weather-jacket"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="All-weather jacket" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=all-weather-jacket">All-Weather Jacket</a>
+          <div class="muted">Wind & water resistant</div>
+          <div class="row"><span class="price">$129</span><span class="stars">★★★★★</span></div>
+          <div class="row"><span class="pill">Bestseller</span><a class="btn" href="checkout.html?product=all-weather-jacket">Add to Cart</a></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media">
+          <a href="checkout.html?product=led-desk-lamp"><img class="thumb" loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3" alt="LED desk lamp" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';"></a>
+        </div>
+        <div class="pad">
+          <a class="title" href="checkout.html?product=led-desk-lamp">LED Desk Lamp</a>
+          <div class="muted">Dimmable light</div>
+          <div class="row"><span class="price">$45</span><span class="stars">★★★★☆</span></div>
+          <div class="row"><span class="pill">Energy saver</span><a class="btn" href="checkout.html?product=led-desk-lamp">Add to Cart</a></div>
+        </div>
+      </article>
+    </section>
+
+    <h2 id="categories" class="section-title">Shop by category</h2>
+    <section class="categories">
+      <a class="cat" href="#products"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop" alt="Men"><span class="label">Men</span></a>
+      <a class="cat" href="#products"><img src="https://images.unsplash.com/photo-1520975661595-6456f4fbf911?q=80&w=1200&auto=format&fit=crop" alt="Women"><span class="label">Women</span></a>
+      <a class="cat" href="#products"><img src="https://images.unsplash.com/photo-1475180098004-ca77a66827be?q=80&w=1200&auto=format&fit=crop" alt="Accessories"><span class="label">Accessories</span></a>
+      <a class="cat" href="#products"><img src="https://images.unsplash.com/photo-1520974722078-3f1f3f1bd2a2?q=80&w=1200&auto=format&fit=crop" alt="Sale"><span class="label">Sale</span></a>
+    </section>
+
+    <section class="checkout-cta">
+      <h3>Your cart is waiting</h3>
+      <a class="btn" href="checkout.html">Go to Checkout</a>
+  </section>
+
+    <!-- Product Admin Section -->
+    <section id="crud" class="crud-section">
+      <div class="crud-header">
+        <h2><i class="bi bi-box-seam me-2"></i>Product Management</h2>
+      </div>
+      
+      <div class="crud-content">
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+        
+        <!-- Form Section -->
+        <div class="form-section">
+          <h3 id="formTitle">Add New Product</h3>
+          <form id="productForm" class="row g-3">
+            <div class="col-md-6">
+              <label for="productName" class="form-label">Product Name</label>
+              <input type="text" class="form-control" id="productName" placeholder="Enter product name" required>
+            </div>
+            <div class="col-md-6">
+              <label for="productPrice" class="form-label">Price</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0" class="form-control" id="productPrice" placeholder="0.00" required>
+              </div>
+            </div>
+            <div class="col-12">
+              <label for="productDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="productDescription" rows="3" placeholder="Describe the product" required></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-crud me-2" id="submitBtn">
+                <i class="bi bi-plus-lg me-1"></i>Add Product
+              </button>
+              <button type="button" class="btn btn-secondary" id="cancelBtn" style="display: none;">
+                <i class="bi bi-x-lg me-1"></i>Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div class="loading" id="loadingSpinner" style="display: none;">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading products...</p>
+        </div>
+        
+        <!-- Table Section -->
+        <div class="table-section">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Product List</h3>
+            <button class="btn btn-outline-primary btn-sm" id="refreshBtn">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody">
+                <!-- Products will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer Testimonials -->
+    <section id="testimonials" class="testimonials-section" aria-label="Customer Testimonials">
+      <div class="crud-header" style="background: linear-gradient(135deg, var(--accent), var(--accent-dark)); padding: 20px; color: #fff;">
+        <h2 style="margin:0; font-weight:800;">Customer Testimonials</h2>
+      </div>
+      <div class="testimonials-content" style="padding: 20px;">
+        <div class="t-grid collapsed">
+          <article class="t-card">
+            <div class="t-head">
+              <img class="t-avatar" src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=256&auto=format&fit=crop" alt="Profile of Alex R." onerror="this.style.display='none'">
+              <div>
+                <div class="t-name">Alex R.</div>
+                <div class="t-stars" aria-label="5 stars">★★★★★</div>
+              </div>
+            </div>
+            <p class="t-text">“Fantastic quality and super fast shipping. The headphones sound incredible!”</p>
+          </article>
+
+          <article class="t-card">
+            <div class="t-head">
+              <img class="t-avatar" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop" alt="Profile of Priya K." onerror="this.style.display='none'">
+              <div>
+                <div class="t-name">Priya K.</div>
+                <div class="t-stars" aria-label="4 stars">★★★★☆</div>
+              </div>
+            </div>
+            <p class="t-text">“Love the design. Customer support helped me pick the right size.”</p>
+          </article>
+
+          <article class="t-card">
+            <div class="t-head">
+              <img class="t-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=256&auto=format&fit=crop" alt="Profile of Daniel S." onerror="this.style.display='none'">
+              <div>
+                <div class="t-name">Daniel S.</div>
+                <div class="t-stars" aria-label="5 stars">★★★★★</div>
+              </div>
+            </div>
+            <p class="t-text">“Great value for money. I’ll definitely buy again from this store.”</p>
+          </article>
+        </div>
+        <div class="t-actions">
+          <button type="button" class="btn t-toggle" id="tToggle">View More</button>
+        </div>
+      </div>
+      <style>
+        /* Scoped styles to #testimonials to avoid conflicts */
+        #testimonials .t-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+        #testimonials .t-grid.collapsed .t-card:nth-child(n+3) { display: none; }
+        #testimonials .t-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); transition: transform .2s ease, box-shadow .2s ease, opacity .3s ease; opacity: 0; transform: translateY(6px); }
+        #testimonials .t-card.show { opacity: 1; transform: translateY(0); }
+        #testimonials .t-card:hover { transform: translateY(-2px); box-shadow: 0 14px 26px rgba(15,23,42,0.12); }
+        #testimonials .t-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        #testimonials .t-avatar { width: 40px; height: 40px; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); }
+        #testimonials .t-name { font-weight: 800; }
+        #testimonials .t-stars { color: #f59e0b; font-size: 14px; line-height: 1; }
+        #testimonials .t-text { margin: 6px 0 0; color: var(--text); }
+        #testimonials .t-actions { text-align: center; margin-top: 14px; }
+        #testimonials .btn.t-toggle { background: var(--accent); color: #fff; border: none; border-radius: 999px; padding: 8px 14px; font-weight: 800; box-shadow: 0 10px 18px rgba(255,111,97,0.35); }
+        #testimonials .btn.t-toggle:hover { filter: brightness(1.03); transform: translateY(-1px); box-shadow: 0 14px 26px rgba(255,111,97,0.45); }
+        /* Hover reveal all */
+        #testimonials:hover .t-grid.collapsed .t-card { display: block; }
+        /* Responsive paddings align with theme */
+        @media (max-width: 600px) { #testimonials .testimonials-content { padding: 16px; } }
+      </style>
+    </section>
+
+    <section id="about"></section>
+
+  </div>
+
+  <div id="footer" class="footer">
+    <div class="wrap">
+      <div>
+        <h4>About</h4>
+        <p>We curate premium products with modern design and exceptional quality. Fast shipping and great support.</p>
+      </div>
+      <div>
+        <h4>Customer Service</h4>
+        <p><a href="#">Shipping & Returns</a></p>
+        <p><a href="#">FAQ</a></p>
+        <p><a href="#">Support</a></p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <p><a href="#products">Shop</a></p>
+        <p><a href="#categories">Categories</a></p>
+        <p><a href="checkout.html">Checkout</a></p>
+      </div>
+      <div>
+        <h4>Follow Us</h4>
+        <p><a href="#">Instagram</a></p>
+        <p><a href="#">Twitter/X</a></p>
+        <p><a href="#">Facebook</a></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 MyStore — All rights reserved
+  </footer>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Product CRUD JavaScript -->
+  <script>
+    $(function () {
+      const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
+      let products = [];
+      let currentEditId = null;
+      let nextTempId = 101;
+
+      // initialise
+      loadProducts();
+      $('#productForm').on('submit', handleFormSubmit);
+      $('#cancelBtn').on('click', resetForm);
+      $('#refreshBtn').on('click', loadProducts);
+
+      $(document).on('click', '.edit-btn', function () {
+        editProduct($(this).data('id'));
+      });
+
+      $(document).on('click', '.delete-btn', function () {
+        const id = $(this).data('id');
+        const name = $(this).data('name');
+        if (confirm(`Remove product "${name}"?`)) {
+          deleteProduct(id);
+        }
+      });
+
+      function showAlert(message, type = 'success') {
+        const alertHtml = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        $('#alertContainer').html(alertHtml);
+        setTimeout(() => $('.alert').alert('close'), 5000);
+      }
+
+      function showLoading(show = true) {
+        if (show) {
+          $('#loadingSpinner').show();
+          $('#productTableBody').hide();
+        } else {
+          $('#loadingSpinner').hide();
+          $('#productTableBody').show();
+        }
+      }
+
+      function loadProducts() {
+        showLoading(true);
+        $.ajax({
+          url: `${API_BASE_URL}/posts`,
+          method: 'GET',
+          dataType: 'json',
+          success: function (data) {
+            const baseProducts = data.slice(0, 5).map((item, index) => ({
+              id: item.id,
+              name: toTitleCase(item.title),
+              price: parseFloat((49.99 + index * 25).toFixed(2)),
+              description: capitaliseSentence(item.body),
+              source: 'api'
+            }));
+            products = baseProducts;
+            const maxId = products.reduce((max, p) => Math.max(max, p.id), 0);
+            nextTempId = Math.max(101, maxId + 1);
+            renderProducts();
+            showAlert('Products loaded successfully!');
+          },
+          error: function (xhr, status, error) {
+            showAlert('Failed to load products: ' + error, 'danger');
+          },
+          complete: function () {
+            showLoading(false);
+          }
+        });
+      }
+
+      function renderProducts() {
+        const tbody = $('#productTableBody');
+        tbody.empty();
+
+        if (!products.length) {
+          tbody.html(`
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                <i class="bi bi-box-seam display-5 text-muted"></i>
+                <p class="mt-2 text-muted">No products available</p>
+              </td>
+            </tr>`);
+          return;
+        }
+
+        products.forEach(product => {
+          const row = `
+            <tr>
+              <td><span class="badge bg-primary">${product.id}</span></td>
+              <td class="fw-semibold">${product.name}</td>
+              <td>$${Number(product.price).toFixed(2)}</td>
+              <td>${escapeHtml(product.description)}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary edit-btn me-1" data-id="${product.id}">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${product.id}" data-name="${product.name}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>`;
+          tbody.append(row);
+        });
+      }
+
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        const name = $('#productName').val().trim();
+        const description = $('#productDescription').val().trim();
+        const priceValue = parseFloat($('#productPrice').val());
+
+        if (!name || !description || Number.isNaN(priceValue) || priceValue < 0) {
+          showAlert('Please provide a valid product name, price, and description.', 'warning');
+          return;
+        }
+
+        const payload = {
+          name,
+          description,
+          price: parseFloat(priceValue.toFixed(2))
+        };
+
+        if (currentEditId) {
+          updateProduct(currentEditId, payload);
+        } else {
+          createProduct(payload);
+        }
+      }
+
+      function createProduct(product) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts`,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ title: product.name, body: product.description, userId: 1 }),
+          success: function (response) {
+            const id = response && response.id ? response.id : nextTempId++;
+            products.unshift({ id, ...product, source: 'local' });
+            renderProducts();
+            showAlert('Product created successfully!');
+            resetForm();
+          },
+          error: function () {
+            showAlert('Unable to create product. Please try again.', 'danger');
+          }
+        });
+      }
+
+      function editProduct(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) {
+          showAlert('Product not found.', 'danger');
+          return;
+        }
+
+        $('#productName').val(product.name);
+        $('#productPrice').val(product.price);
+        $('#productDescription').val(product.description);
+
+        currentEditId = id;
+        $('#formTitle').text('Edit Product');
+        $('#submitBtn').html('<i class="bi bi-check-lg me-1"></i>Update Product');
+        $('#cancelBtn').show();
+
+        $('html, body').animate({ scrollTop: $('#crud').offset().top - 80 }, 400);
+      }
+
+      function updateProduct(id, product) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts/${id}`,
+          method: 'PUT',
+          contentType: 'application/json',
+          data: JSON.stringify({ id, title: product.name, body: product.description, userId: 1 }),
+          success: function () {
+            products = products.map(p => (p.id === id ? { ...p, ...product } : p));
+            renderProducts();
+            showAlert('Product updated successfully!');
+            resetForm();
+          },
+          error: function () {
+            showAlert('Unable to update product.', 'danger');
+          }
+        });
+      }
+
+      function deleteProduct(id) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts/${id}`,
+          method: 'DELETE',
+          success: function () {
+            products = products.filter(p => p.id !== id);
+            renderProducts();
+            showAlert('Product removed successfully!');
+          },
+          error: function () {
+            showAlert('Unable to delete product.', 'danger');
+          }
+        });
+      }
+
+      function resetForm() {
+        $('#productForm')[0].reset();
+        currentEditId = null;
+        $('#formTitle').text('Add New Product');
+        $('#submitBtn').html('<i class="bi bi-plus-lg me-1"></i>Add Product');
+        $('#cancelBtn').hide();
+      }
+
+      function toTitleCase(str) {
+        return String(str || '').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substring(1));
+      }
+
+      function capitaliseSentence(str) {
+        const cleaned = String(str || '').trim();
+        if (!cleaned) return '';
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      }
+
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+    });
+  </script>
+<script>
+  // Add skeleton to thumbnails until loaded, and enforce a brand placeholder when missing
+  (function(){
+    var imgs = document.querySelectorAll('.thumb');
+    imgs.forEach(function(img){
+      img.classList.add('skeleton');
+      if (!img.getAttribute('src')) {
+        img.src = 'https://via.placeholder.com/800x600/FFEAE7/FF6F61?text=No+Image';
+      }
+      img.addEventListener('load', function(){ img.classList.remove('skeleton'); }, { once: true });
+      img.addEventListener('error', function(){ img.classList.remove('skeleton'); }, { once: true });
+    });
+  })();
+  </script>
+  <script>
+    // Testimonials reveal + simple auto-rotate emphasis
+    (function(){
+      var grid = document.querySelector('#testimonials .t-grid');
+      var cards = Array.prototype.slice.call(document.querySelectorAll('#testimonials .t-card'));
+      var btn = document.getElementById('tToggle');
+      var expanded = false;
+      // Staggered reveal animation
+      cards.forEach(function(card, i){ setTimeout(function(){ card.classList.add('show'); }, 120 * i); });
+      if (btn && grid) {
+        btn.addEventListener('click', function(){
+          expanded = !expanded;
+          if (expanded) { grid.classList.remove('collapsed'); btn.textContent = 'View Less'; }
+          else { grid.classList.add('collapsed'); btn.textContent = 'View More'; }
+        });
+      }
+      // Optional: auto-rotate highlight
+      var idx = 0;
+      setInterval(function(){
+        cards.forEach(function(c){ c.style.outline = 'none'; c.style.outlineOffset = '0'; });
+        if (cards.length) {
+          cards[idx % cards.length].style.outline = '2px solid rgba(255,111,97,.6)';
+          cards[idx % cards.length].style.outlineOffset = '2px';
+          idx++;
+        }
+      }, 3500);
+    })();
+  </script>
+</body>
+</html>
