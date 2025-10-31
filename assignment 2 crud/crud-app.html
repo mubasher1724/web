@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Manager - CRUD App</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .main-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    .header-section {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border-radius: 20px 20px 0 0;
+      padding: 2rem;
+    }
+    .form-section {
+      background: #f8fafc;
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .table-section {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    .btn-custom {
+      border-radius: 10px;
+      font-weight: 600;
+      padding: 0.5rem 1.5rem;
+      transition: all 0.3s ease;
+    }
+    .btn-custom:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+    }
+    .table thead th {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border: none;
+      font-weight: 600;
+    }
+    .table tbody tr:hover {
+      background-color: #f8fafc;
+      transform: scale(1.01);
+    }
+    .alert-custom {
+      border-radius: 10px;
+      border: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="main-container">
+      <!-- Header -->
+      <div class="header-section text-center">
+        <h1 class="display-4 fw-bold mb-3">
+          <i class="bi bi-cart-check me-3"></i>Product Manager
+        </h1>
+        <p class="lead mb-0">Manage your store products with full CRUD operations</p>
+      </div>
+
+      <div class="p-4">
+        <!-- Alerts -->
+        <div id="alertContainer"></div>
+
+        <!-- Product Form -->
+        <div class="form-section">
+          <h3 class="mb-4" id="formTitle">
+            <i class="bi bi-plus-circle me-2"></i>Add New Product
+          </h3>
+          <form id="productForm" class="row g-3">
+            <div class="col-md-6">
+              <label for="productName" class="form-label fw-semibold">Product Name</label>
+              <input type="text" class="form-control" id="productName" placeholder="Enter product name" required>
+            </div>
+            <div class="col-md-3">
+              <label for="productPrice" class="form-label fw-semibold">Price ($)</label>
+              <input type="number" step="0.01" min="0" class="form-control" id="productPrice" placeholder="0.00" required>
+            </div>
+            <div class="col-12">
+              <label for="productDescription" class="form-label fw-semibold">Description</label>
+              <textarea class="form-control" id="productDescription" rows="3" placeholder="Enter description" required></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary btn-custom me-2" id="submitBtn">
+                <i class="bi bi-plus-lg me-1"></i>Add Product
+              </button>
+              <button type="button" class="btn btn-secondary btn-custom" id="cancelBtn" style="display:none;">
+                <i class="bi bi-x-lg me-1"></i>Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Product Table -->
+        <div class="table-section">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="mb-0"><i class="bi bi-box-seam me-2"></i>Product List</h3>
+            <button class="btn btn-outline-primary btn-custom" id="refreshBtn">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    $(function () {
+      const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
+      let products = [];
+      let currentEditId = null;
+      let nextTempId = 201;
+
+      loadProducts();
+      $('#productForm').on('submit', handleFormSubmit);
+      $('#cancelBtn').on('click', resetForm);
+      $('#refreshBtn').on('click', loadProducts);
+
+      $(document).on('click', '.edit-btn', function () {
+        editProduct($(this).data('id'));
+      });
+
+      $(document).on('click', '.delete-btn', function () {
+        const id = $(this).data('id');
+        const name = $(this).data('name');
+        if (confirm(`Remove product "${name}"?`)) {
+          deleteProduct(id);
+        }
+      });
+
+      function showAlert(message, type = 'success') {
+        const alertHtml = `
+          <div class="alert alert-${type} alert-dismissible fade show alert-custom" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        $('#alertContainer').html(alertHtml);
+        setTimeout(() => { $('.alert').alert('close'); }, 4500);
+      }
+
+      function loadProducts() {
+        $.ajax({
+          url: `${API_BASE_URL}/posts`,
+          method: 'GET',
+          dataType: 'json',
+          success: function (data) {
+            products = data.slice(0, 5).map((item, index) => ({
+              id: item.id,
+              name: toTitleCase(item.title),
+              price: parseFloat((39.99 + index * 30).toFixed(2)),
+              description: capitaliseSentence(item.body),
+              source: 'api'
+            }));
+            const maxId = products.reduce((max, p) => Math.max(max, p.id), 0);
+            nextTempId = Math.max(nextTempId, maxId + 1);
+            renderProducts();
+            showAlert('Products loaded successfully!');
+          },
+          error: function () {
+            showAlert('Error loading products', 'danger');
+          }
+        });
+      }
+
+      function renderProducts() {
+        const tbody = $('#productTableBody');
+        tbody.empty();
+        if (!products.length) {
+          tbody.html(`
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                <i class="bi bi-box-seam display-6 text-muted"></i>
+                <p class="mt-2 text-muted">No products available</p>
+              </td>
+            </tr>`);
+          return;
+        }
+        products.forEach(product => {
+          tbody.append(`
+            <tr>
+              <td><span class="badge bg-primary">${product.id}</span></td>
+              <td class="fw-semibold">${product.name}</td>
+              <td>$${Number(product.price).toFixed(2)}</td>
+              <td>${escapeHtml(product.description)}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary edit-btn me-1" data-id="${product.id}">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${product.id}" data-name="${product.name}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>`);
+        });
+      }
+
+      function handleFormSubmit(e) {
+        e.preventDefault();
+        const name = $('#productName').val().trim();
+        const description = $('#productDescription').val().trim();
+        const priceValue = parseFloat($('#productPrice').val());
+
+        if (!name || !description || Number.isNaN(priceValue) || priceValue < 0) {
+          showAlert('Please enter a valid product name, price, and description.', 'warning');
+          return;
+        }
+
+        const product = {
+          name,
+          description,
+          price: parseFloat(priceValue.toFixed(2))
+        };
+
+        if (currentEditId) {
+          updateProduct(currentEditId, product);
+        } else {
+          createProduct(product);
+        }
+      }
+
+      function createProduct(product) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts`,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ title: product.name, body: product.description, userId: 1 }),
+          success: function (response) {
+            const id = response && response.id ? response.id : nextTempId++;
+            products.unshift({ id, ...product, source: 'local' });
+            renderProducts();
+            showAlert('Product added successfully!');
+            resetForm();
+          },
+          error: function () {
+            showAlert('Error adding product', 'danger');
+          }
+        });
+      }
+
+      function editProduct(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) {
+          showAlert('Product not found.', 'danger');
+          return;
+        }
+        $('#productName').val(product.name);
+        $('#productPrice').val(product.price);
+        $('#productDescription').val(product.description);
+        currentEditId = id;
+        $('#formTitle').text('Edit Product');
+        $('#submitBtn').html('<i class="bi bi-check-lg me-1"></i>Update Product');
+        $('#cancelBtn').show();
+        $('html, body').animate({ scrollTop: 0 }, 400);
+      }
+
+      function updateProduct(id, product) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts/${id}`,
+          method: 'PUT',
+          contentType: 'application/json',
+          data: JSON.stringify({ id, title: product.name, body: product.description, userId: 1 }),
+          success: function () {
+            products = products.map(p => (p.id === id ? { ...p, ...product } : p));
+            renderProducts();
+            showAlert('Product updated successfully!');
+            resetForm();
+          },
+          error: function () {
+            showAlert('Error updating product', 'danger');
+          }
+        });
+      }
+
+      function deleteProduct(id) {
+        $.ajax({
+          url: `${API_BASE_URL}/posts/${id}`,
+          method: 'DELETE',
+          success: function () {
+            products = products.filter(p => p.id !== id);
+            renderProducts();
+            showAlert('Product deleted successfully!');
+          },
+          error: function () {
+            showAlert('Error deleting product', 'danger');
+          }
+        });
+      }
+
+      function resetForm() {
+        $('#productForm')[0].reset();
+        currentEditId = null;
+        $('#formTitle').text('Add New Product');
+        $('#submitBtn').html('<i class="bi bi-plus-lg me-1"></i>Add Product');
+        $('#cancelBtn').hide();
+      }
+
+      function toTitleCase(str) {
+        return String(str || '').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substring(1));
+      }
+
+      function capitaliseSentence(str) {
+        const cleaned = String(str || '').trim();
+        if (!cleaned) return '';
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      }
+
+      function escapeHtml(unsafe) {
+        return String(unsafe || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+    });
+  </script>
+</body>
+</html>
